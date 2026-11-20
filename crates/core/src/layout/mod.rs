@@ -280,6 +280,64 @@ mod tests {
     }
 
     #[test]
+    fn the_vietnamese_section_is_off_until_a_profile_turns_it_on() {
+        let layout = Layout::builtin();
+        let section = layout.section("vietnamese").expect("a vietnamese section");
+        assert!(!section.enabled && !section.required);
+        let index = layout
+            .section_names()
+            .iter()
+            .position(|n| *n == "vietnamese");
+        let layers: Vec<_> = layout.layers_with(index.unwrap()).collect();
+        assert_eq!(layers, ["base"]);
+
+        let off = Keymap::from(&layout);
+        assert!(!rows(&off, "base").contains(&"ăâđêôơư".to_owned()));
+
+        let mut arrangement = Arrangement::default();
+        arrangement.set_enabled("vietnamese", true, false);
+        let on = layout.keymap(&arrangement);
+        let base = rows(&on, "base");
+        let row = base.iter().position(|row| row == "ăâđêôơư");
+        // One tap away: right above the letters.
+        assert!(
+            base[row.expect("the row") + 1].starts_with("qwerty"),
+            "{base:?}"
+        );
+        assert_eq!(rows(&on, "sym"), rows(&off, "sym"));
+        assert_eq!(rows(&on, "nav"), rows(&off, "nav"));
+    }
+
+    #[test]
+    fn the_vietnamese_section_has_the_tones_on_long_press() {
+        let layout = Layout::builtin();
+        let keys = &layout.section("vietnamese").unwrap().rows[0];
+        let holds: Vec<Option<String>> = keys
+            .iter()
+            .map(|key| key.hold.as_ref().map(Action::default_label))
+            .collect();
+        // Sắc, huyền, hỏi, ngã, nặng, in VNI's order, as combining marks
+        // drawn on a dotted circle.
+        let tone = |mark: char| Some(format!("\u{25cc}{mark}"));
+        assert_eq!(
+            holds,
+            [
+                tone('\u{301}'),
+                tone('\u{300}'),
+                tone('\u{309}'),
+                tone('\u{303}'),
+                tone('\u{323}'),
+                None,
+                None,
+            ]
+        );
+        for key in keys {
+            assert!(key.tap.single_char().is_some(), "{key:?}");
+            assert_eq!(key.swipe, None);
+        }
+    }
+
+    #[test]
     fn sections_build_layers_in_declaration_order() {
         let layout = layout(SECTIONS);
         let keymap = Keymap::from(&layout);

@@ -357,6 +357,41 @@ mod tests {
     }
 
     #[test]
+    fn vietnamese_letters_follow_shift_and_tones_join_the_letter_before() {
+        use crate::{Arrangement, OutputSink, PreviewSink};
+        let mut arrangement = Arrangement::default();
+        arrangement.set_enabled("vietnamese", true, false);
+        let mut kb = Keyboard::new(Layout::builtin().keymap(&arrangement));
+        let mut sink = PreviewSink::default();
+        let a_breve = find(&kb, &text("ă"));
+        let e_circumflex = find(&kb, &text("ê"));
+        let o_circumflex = find(&kb, &text("ô"));
+
+        // "Việt": the nặng tone is a long-press of the fifth key.
+        kb.apply(&Action::Modifier(Modifier::Shift));
+        let outputs = [
+            kb.apply(&text("v")),
+            kb.apply(&text("i")),
+            kb.tap(e_circumflex),
+            kb.hold(o_circumflex),
+            kb.apply(&text("t")),
+        ];
+        for output in outputs.into_iter().flatten() {
+            sink.emit(output);
+        }
+        assert_eq!(sink.text(), "Viê\u{323}t");
+
+        kb.apply(&Action::Modifier(Modifier::Shift));
+        assert_eq!(kb.display_label(kb.key(a_breve).unwrap()), "Ă");
+        assert_eq!(kb.tap(a_breve), Some(Output::Text("Ă".into())));
+        let key = kb.key(a_breve).unwrap().clone();
+        assert_eq!(kb.hold_hint(&key).as_deref(), Some("\u{25cc}\u{301}"));
+        // Shift does not change a tone mark.
+        kb.apply(&Action::Modifier(Modifier::Shift));
+        assert_eq!(kb.hold(a_breve), Some(Output::Text("\u{301}".into())));
+    }
+
+    #[test]
     fn set_keymap_keeps_the_layer_by_name() {
         let mut kb = keyboard();
         kb.apply(&Action::Layer("nav".into()));

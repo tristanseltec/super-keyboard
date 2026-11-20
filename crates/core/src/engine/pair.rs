@@ -6,7 +6,7 @@
 //! Left, Right and Delete keys, so every sink gets auto-pairing for free.
 
 use crate::{
-    action::{Modifiers, NamedKey},
+    action::{Modifiers, NamedKey, is_combining_mark},
     output::{KeyCode, Output},
 };
 
@@ -90,7 +90,11 @@ impl AutoPair {
                     return self.character(c);
                 }
                 self.typed(text.chars().count());
-                self.after_word = text.chars().next_back().is_some_and(char::is_alphanumeric);
+                // A combining mark belongs to the letter before it, as in a
+                // word the composer writes decomposed.
+                if let Some(last) = text.chars().rev().find(|c| !is_combining_mark(*c)) {
+                    self.after_word = last.is_alphanumeric();
+                }
             }
             Output::Key {
                 key: KeyCode::Named(key),
@@ -132,7 +136,11 @@ impl AutoPair {
             ];
         }
         self.typed(1);
-        self.after_word = c.is_alphanumeric();
+        // A combining mark (a tone from the Vietnamese row) belongs to the
+        // letter before it, so it leaves `after_word` as it was.
+        if !is_combining_mark(c) {
+            self.after_word = c.is_alphanumeric();
+        }
         vec![Output::Text(c.into())]
     }
 
@@ -258,6 +266,19 @@ mod tests {
         assert_eq!(typed("don't"), "don't|");
         assert_eq!(typed("5'"), "5'|");
         assert_eq!(typed("(\"\")"), "(\"\")|");
+        // A combining mark belongs to the letter before it: a tone typed from
+        // the Vietnamese row, or a word the composer writes decomposed.
+        assert_eq!(typed("ca\u{301}'"), "ca\u{301}'|");
+        let mut pairs = AutoPair::new(true);
+        let mut sink = PreviewSink::default();
+        for output in [text("ca\u{301}"), text("'")] {
+            for output in pairs.process(output) {
+                sink.emit(output);
+            }
+        }
+        assert_eq!(sink.text(), "ca\u{301}'");
+        // A mark after an opener is not a word.
+        assert_eq!(typed("(\u{301}'"), "(\u{301}'|')");
     }
 
     #[test]

@@ -61,6 +61,18 @@ name = "brackets"
 title = "Esc, Tab, brackets and ; :"
 rows = [["<esc>", "<tab>", "(", ")", "{", "}", "[", "]", ";", ":"]]
 
+# Vietnamese letters, for typing Vietnamese without Telex or VNI. Long-press the
+# first five keys for the tones, in VNI's order: sắc, huyền, hỏi, ngã, nặng. A
+# tone is a combining mark ("\u0301"), so it joins the letter typed before it.
+[[sections]]
+name = "vietnamese"
+title = "Vietnamese letters: ă â đ ê ô ơ ư"
+enabled = false
+rows = [[
+    { tap = "ă", hold = "\u0301" }, { tap = "â", hold = "\u0300" }, { tap = "đ", hold = "\u0309" },
+    { tap = "ê", hold = "\u0303" }, { tap = "ô", hold = "\u0323" }, "ơ", "ư",
+]]
+
 [[sections]]
 name = "letters"
 title = "Letters"
@@ -131,7 +143,7 @@ rows = [[
 
 [[layers]]
 name = "base"
-sections = ["number-row", "terminal", "brackets", "letters", "bottom"]
+sections = ["number-row", "terminal", "brackets", "vietnamese", "letters", "bottom"]
 
 [[layers]]
 name = "sym"

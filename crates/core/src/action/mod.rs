@@ -19,6 +19,15 @@ mod named_key;
 pub use modifier::{Modifier, Modifiers};
 pub use named_key::NamedKey;
 
+/// What a combining mark is drawn on when it is a label of its own.
+const DOTTED_CIRCLE: char = '\u{25cc}';
+
+/// Whether `c` is in Unicode's Combining Diacritical Marks block, where the
+/// Vietnamese tone marks are.
+pub(crate) fn is_combining_mark(c: char) -> bool {
+    ('\u{300}'..='\u{36f}').contains(&c)
+}
+
 /// What happens when a key is tapped or held.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -70,9 +79,14 @@ impl Action {
         Err(ParseActionError::UnknownName(name.to_owned()))
     }
 
-    /// The label shown on a key cap when the layout does not set one.
+    /// The label shown on a key cap when the layout does not set one. A
+    /// combining mark on its own, such as a Vietnamese tone, is drawn on a
+    /// dotted circle (◌́) so that it has something to sit on.
     pub fn default_label(&self) -> String {
         match self {
+            Self::Text(text) if text.starts_with(is_combining_mark) => {
+                format!("{DOTTED_CIRCLE}{text}")
+            }
             Self::Text(text) => text.clone(),
             Self::Key(key) => key.label(),
             Self::Modifier(modifier) => modifier.label().to_owned(),
@@ -114,6 +128,17 @@ fn bracketed_name(spec: &str) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_combining_mark_is_labelled_on_a_dotted_circle() {
+        let label = |text: &str| Action::Text(text.into()).default_label();
+        assert_eq!(label("\u{301}"), "\u{25cc}\u{301}");
+        assert_eq!(label("\u{323}"), "\u{25cc}\u{323}");
+        // Text that only contains a mark is shown as written.
+        assert_eq!(label("a\u{301}"), "a\u{301}");
+        assert_eq!(label("->"), "->");
+        assert_eq!(label(""), "");
+    }
 
     #[test]
     fn plain_text_and_operators_are_text() {

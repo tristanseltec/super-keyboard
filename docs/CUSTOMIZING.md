@@ -121,7 +121,8 @@ between them: `(` types `()`, and likewise for `[`, `{`, `"`, `'` and `` ` ``.
 
 - **Typing the closer steps over it**, so `(x)` typed out of habit is `(x)`, not `(x))`.
 - **Backspace right after an opener removes both halves.**
-- **A quote after a letter or digit is typed alone**: `don't` stays `don't`.
+- **A quote after a letter or digit is typed alone**: `don't` stays `don't`. A tone mark
+  counts as part of the letter it is on, so `cá'` is not paired either.
 - Only a single typed character pairs. Keys that insert longer text (`$(`, `${`) and
   chords such as `Ctrl+(` are not changed.
 - The keyboard cannot see the text it types into, so it remembers a pair only until the
@@ -425,6 +426,33 @@ itself, so they always match what the keys do.
   same version (the `.deb` installs both). An older one does not know `method = "viqr"`,
   `telex-w` or `telex-brackets` and ignores `settings.toml` until it is updated: it keeps
   the settings it had, or starts with the defaults. It never writes over the file.
+
+### Vietnamese letters on the keyboard
+
+To type Vietnamese without Telex or VNI, switch on the **Vietnamese letters** section
+(`vietnamese`) on the **Sections tab**, or in a profile:
+
+```toml
+[[profiles]]
+name = "viet"
+title = "Tiếng Việt"
+layout = "dev"
+sections = { vietnamese = true }
+```
+
+It adds a row with `ă â đ ê ô ơ ư` right above the letters, off by default. Shift types
+the capitals. Long-press the first five keys for the tones, in VNI's order:
+
+| Long-press | `ă` | `â` | `đ` | `ê` | `ô` |
+|---|---|---|---|---|---|
+| Tone | sắc ◌́ | huyền ◌̀ | hỏi ◌̉ | ngã ◌̃ | nặng ◌̣ |
+
+A tone goes on the letter before the cursor: `a` then long-press `ă` is `á`, and `V` `i`
+`ê` long-press `ô` `t` is `Việt`. The tones are Unicode combining marks, so `á` typed
+this way is stored as `a` followed by the mark (decomposed) rather than as one character.
+It looks the same, but a few applications treat the two differently; Telex and VNI
+always write single characters. The row is for the plain keys: with **VI** on, a letter
+from it ends the syllable being typed.
 
 ### With the physical keyboard, in every app (Ubuntu)
 
